@@ -1,0 +1,13 @@
+{% extends 'master.html' %}
+
+{% block title %}
+ {{ todo.name }} details
+{% endblock %}
+
+{% block content_center %}
+  <div class='card'>
+    <h1>{{ todo.name }}</h1>
+    <p>{{ todo.description }}</p>
+  </div>
+
+{% endblock %}

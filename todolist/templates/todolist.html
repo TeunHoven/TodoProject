@@ -1,0 +1,209 @@
+{% extends "master.html" %}
+{% load todo_extra %}
+
+{% block content_left %}
+
+    <h5 class='display-5'><a class='btn btn-primary' href='/lists'>back</a></h5>
+
+{% endblock %}
+
+{% block content_center %}
+
+    <div class='row no-gutters'>  
+        <div class='col'><h1 >{{ list.name }}</h1></div>
+        <div class='col d-flex justify-content-end'>
+            <button type='button' class='h2 bi bi-plus-circle' data-bs-toggle='modal' data-bs-target='#addModal' style="border: none; background-color: transparent;"></button>
+        </div>
+    </div>
+    
+    <!-- FORM ADDING TODO -->
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalLabel">Add task</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add form for adding Todo -->
+                <form action="new-todo/" id="new-todo-form" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class='mb-3'>
+                            {{ field.errors }}
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label | capfirst }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" value="Submit" class="btn btn-primary">Add Task</button>
+                </form>
+                <!-- End of form -->
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- FORM CHANGING TODO -->
+    <div class="modal fade" id="changing-modal" tabindex="-1" aria-labelledby="modal-label-change" aria-hidden="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modal-label-change">Add task</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add form for adding Todo -->
+                <form action="" id="change-todo-form" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class='mb-3'>
+                            {{ field.errors }}
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label | capfirst }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" value="Submit" class="btn btn-primary">Save Changes</button>
+                </form>
+                <!-- End of form -->
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- MODEL DELETING TODO -->
+    <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="modal-label-delete" aria-hidden="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modal-label-delete">Delete Todo</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add form for adding Todo -->
+                <form action="" id="delete-todo-form" method="post">
+                    {% csrf_token %}
+                    <h2 id='delete-text'></h2>
+                    <button type="submit" value="Submit" class="btn btn-danger">Delete</button> 
+                    <button type="button" value="Submit" data-bs-dismiss="modal">Cancel</button>
+                </form>
+                <!-- End of form -->
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        const csrftoken = Cookies.get('csrftoken');
+
+        $( document ).ready(function() {
+            $("#sortable").sortable({
+                update: function(event, ui) {
+                    sort =[];
+                    $("#sortable").children().each(function(){
+                        sort.push({'pk':$(this).data('pk'),'order':$(this).index()})
+                });
+        
+        
+                request = $.ajax({
+                  url: "sort-todo/",
+                  type: "post",
+                  datatype:'json',
+                  headers: {'X-CSRFToken': csrftoken},
+                  data:{'sort':JSON.stringify(sort),
+                    },
+        
+                });
+                console.log(sort)
+                },
+            }).disableSelection();
+            $("#sortable").disableSelection();
+        });
+
+
+        function deleteTodo(id) {
+            request = $.ajax({
+                url: id,
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                mode: 'same-origin'
+            });
+
+            request.done(function (msg){
+                $('#delete-modal').modal('show');
+                $('#delete-text').innerHTML = 'Are you really want to delete ' + msg['name'];
+                $('#delete-todo-form').attr('action', 'delete-'+msg['id']+'/');
+            });
+        }
+
+        function changeTodo(id) {
+            request = $.ajax({
+                url: id,
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                mode: 'same-origin'
+            });
+
+            request.done(function (msg){
+                $('#changing-modal').modal('show');
+                $('#changing-modal').find('#id_name').val(msg['name']);
+                $('#changing-modal').find('#id_description').val(msg['description']);
+                $('#changing-modal').find('#id_date_finished').val(msg['deadline']);
+                $('#changing-modal').find('#change-todo-form').attr('action', 'change-'+msg['id']+'/');
+            });
+        }
+
+        function todoDoneFunc(id, done) {
+            request = $.ajax({
+                url: id + '-done/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                mode: 'same-origin'
+            });
+
+            request.done(function (msg) {
+                console.log(msg)
+                $('#todo-'+id).removeClass().addClass('row no-gutters alert '+msg+' align-items-center');
+
+                if(done == 'True') {
+                    $('#todoDone-'+id).removeClass('h2 bi bi-check-square').addClass('h2 bi bi-square');
+                    $('#todoDone-'+id).attr('onclick', "todoDoneFunc(" + id + ", 'False')");
+                } else {
+                    $('#todoDone-'+id).removeClass('h2 bi bi-square').addClass('h2 bi bi-check-square');
+                    $('#todoDone-'+id).attr('onclick', "todoDoneFunc(" + id + ", 'True')");
+                }
+            });
+
+            request.fail(function (jqXHR, textStatus) {
+                console.log("Request failed: " + textStatus);
+            });
+        }
+    </script>
+    
+    <div id='sortable'>
+    {% for todo in todos %}
+    {% with days=todo.date_finished|days_until %}
+            {{ todo.id | type_div }}
+            <div class='col col-sm-2'><p class='h2'>{{ todo.name }}</p></div>
+            <div class='col col-sm-3'><p class='h3'>{{ todo.description }}</p></div>
+            <div class='col col-sm-3'><p class='h3'>{{ days }} days left</p></div>
+            <div class='col col-sm-1 d-flex justify-content-end'>
+                {% if todo.done %}
+                    <button onclick="todoDoneFunc({{ todo.id }}, '{{ todo.done }}')" id="todoDone-{{ todo.id }}" class="h2 bi bi-check-square" style="border: none; background-color: transparent;"></button>
+                {% else %}   
+                    <button onclick="todoDoneFunc({{ todo.id }}, '{{ todo.done }}')" id="todoDone-{{ todo.id }}" class="h2 bi bi-square" style="border: none; background-color: transparent;"></button>
+                {% endif %}
+            </div>
+            <div class='col col-sm-3'>
+                <div class='row'>
+                    <button onclick="changeTodo({{ todo.id }})" id="todoChange-{{ todo.id }}" class="h1 bi bi-pencil-square" style="border: none; background-color: transparent;"></button>
+                </div>
+                <div class='row'>
+                    <button onclick="deleteTodo({{ todo.id }})" id="todoDelete-{{ todo.id }}" class="h1 bi bi-trash3" style="border: none; background-color: transparent;"></button>
+                </div>
+            </div>
+        </div>  
+    {% endwith %}
+    {% endfor %}
+    </div>
+
+{% endblock %}

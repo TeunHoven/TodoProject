@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  {% load bootstrap5 %}
+  {% bootstrap_css %}
+  {% bootstrap_javascript %}
+
+  <script src="https://unpkg.com/htmx.org@1.8.5" integrity="sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w" crossorigin="anonymous"></script>`
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+
+  <style>
+    @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css");
+  </style>
+</head>
+<body>
+
+    <ul class='nav nav-pills bg-info' style='margin-bottom: 10px'>
+      <li class='nav-item'>
+        <a class='nav-link link-light' href='/'>HOME</a>
+      </li>
+      <li class='nav-item'>
+        <a class='nav-link link-light' href='/lists'>LISTS</a>
+      </li>
+    </ul>
+
+  <div class='row'>
+    <div class='col-sm-2'> 
+      {% block content_left %}
+      {% endblock %}
+    </div>
+
+    <div class='col-xl-8'> 
+      {% block content_center %}
+      {% endblock %}
+    </div>
+
+    <div class='col-sm-2'> 
+      {% block content_right %}
+      {% endblock %}
+    </div>
+  </row>
+</body>
+</html>

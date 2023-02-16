@@ -1,0 +1,141 @@
+{% extends "master.html" %}
+{% load todo_extra %}
+
+{% block content_center %}
+    
+    <div class='col d-flex justify-content-end'>
+        <button type='button' class='h2 bi bi-plus-circle' data-bs-toggle='modal' data-bs-target='#addModal' style="border: none; background-color: transparent;"></button>
+    </div>
+
+    <!-- FORM ADDING LIST -->
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalLabel">Add Todo List</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add form for adding List -->
+                <form action="add-list/" id="add-list-form" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class='mb-3'>
+                            {{ field.errors }}
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label | capfirst }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" value="Submit" class="btn btn-primary">Add List</button>
+                </form>
+                <!-- End of form -->
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- FORM CHANGING TODO -->
+    <div class="modal fade" id="changing-modal" tabindex="-1" aria-labelledby="modal-label-change" aria-hidden="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modal-label-change">Change List</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add form for adding Todo -->
+                <form action="" id="change-list-form" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class='mb-3'>
+                            {{ field.errors }}
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label | capfirst }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" value="Submit" class="btn btn-primary">Save Changes</button>
+                </form>
+                <!-- End of form -->
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- MODAL DELETING TODO -->
+    <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="modal-label-delete" aria-hidden="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modal-label-delete">Delete Todo</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add form for adding Todo -->
+                <form action="" id="delete-list-form" method="post">
+                    {% csrf_token %}
+                    <h2 id='delete-text'></h2>
+                    <button type="submit" value="Submit" class="btn btn-danger">Delete</button> 
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cancel</button>
+                </form>
+                <!-- End of form -->
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        const csrftoken = Cookies.get('csrftoken');
+    
+        function deleteList(id) {
+            request = $.ajax({
+                url: 'get-'+id,
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                mode: 'same-origin'
+            });
+    
+            request.done(function (msg){
+                $('#delete-modal').modal('show');
+                $('#delete-text').innerHTML = 'Are you really want to delete ' + msg['name'];
+                $('#delete-list-form').attr('action', 'delete-'+msg['id']+'/');
+            });
+        }
+    
+        function changeList(id) {
+            request = $.ajax({
+                url: 'get-'+id,
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                mode: 'same-origin'
+            });
+    
+            request.done(function (msg){
+                console.log(msg);
+                $('#changing-modal').modal('show');
+                $('#changing-modal').find('#id_name').val(msg['name']);
+                $('#changing-modal').find('#id_description').val(msg['description']);
+                $('#changing-modal').find('#change-list-form').attr('action', 'change-'+msg['id']+'/');
+            });
+        }
+    </script>
+    
+    {% for list in lists %}
+        <div class='card mb-3'>
+            <div class='card-header d-flex'>
+                <h6 class='text-muted flex-fill'>{{ list.user.username }}</h6>
+                <div class='d-flex justify-content-end'>
+                    <button onclick="changeList({{ list.id }})" id="listChange-{{ list.id }}" class="bi bi-pencil-square" style="border: none; background-color: transparent;"></button>
+                    <button onclick="deleteList({{ list.id }})" id="listDelete-{{ list.id }}" class="bi bi-trash3" style="border: none; background-color: transparent;"></button>
+                </div>
+            </div>
+            <div class='card-body'>
+                <h4 class='card-title'>{{ list.name }}</h4>
+                <p class='card-text'>{{ list.description }}</p>
+                <a href="{{ list.id }}" class="btn btn-primary">Ga naar {{ list.name }}</a>
+            </div>
+            <div class="card-footer text-muted">
+                <p>{{ list.datetime_created | days_since }} days ago</p>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
